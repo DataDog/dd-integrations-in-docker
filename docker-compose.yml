@@ -1,0 +1,56 @@
+version: '3.8'
+
+secrets:
+  dd_api_key:
+    external: true 
+  test:
+    external: true
+
+services:
+  cassandra:
+    image: cassandra:latest
+    volumes:
+      - cassandradata:/data
+  zookeeper:
+    image: wurstmeister/zookeeper
+  kafka:
+    image: wurstmeister/kafka
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPIC: "kafka-spring-boot:1:3"
+
+  redis:
+    image: redis:alpine
+    volumes:
+      - redisdata:/data
+
+  datadog-agent:
+    image: datadog/agent:latest-jmx
+    secrets:
+      - dd_api_key
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro 
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+    environment:
+      DD_API_KEY: ${DD_API_KEY}
+      DD_LOGS_ENABLED: "true"
+      DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "true"
+    labels:
+      com.datadoghq.ad.check_names: '["redisdb", "kafka"]'
+      com.datadoghq.ad.init_configs: '[
+        {},
+        {"collect_default_metrics": "true"}
+      ]'
+      com.datadoghq.ad.instances: '[
+        {"host": "%%host%%","port":"6379","password":"%%env_REDIS_PASSWORD%%"}, 
+        {"host": "%%host%%", "port": "9092"}
+      ]'
+      
+volumes:
+  redisdata:
+    driver: local
+  cassandradata:
+    driver: local
+
