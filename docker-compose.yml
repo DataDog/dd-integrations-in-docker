@@ -11,19 +11,94 @@ services:
     image: cassandra:latest
     volumes:
       - cassandradata:/data
-  zookeeper:
-    image: wurstmeister/zookeeper
-  kafka:
-    image: wurstmeister/kafka
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: kafka
+      LOCAL_JMX: "no"
+    labels:
+      com.datadoghq.ad.check_names: '["cassandra"]'
+      com.datadoghq.ad.init_configs: |-
+        [
+          {
+            "is_jmx": true, 
+            "collect_default_metrics": true,
+            "new_gc_metrics": true,
+            "service": "cassandra"
+
+          }
+        ]
+      com.datadoghq.ad.instances: |-
+        [
+          {
+            "host": "%%host%%",
+            "name": "cassandra",
+            "port": 7199,
+            "user": "%%env_CASSANDRA_USER%%",
+            "password":  "%%env_CASSANDRA_PASSWORD%%"
+          }
+        ]
+    
+  zookeeper:
+    image: confluentinc/cp-zookeeper:6.1.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      EXTRA_ARGS: -Dzookeeper.4lw.commands.whitelist=srvr,stat,mntr
+    labels:
+      com.datadoghq.ad.check_names: '["zk"]'
+      com.datadoghq.ad.init_configs: |-
+        [
+            {
+                "service": "zookeeper"
+            }
+        ]
+      com.datadoghq.ad.instances: |-
+        [
+            {
+                "host": "%%host%%"
+            }
+        ]
+  kafka:
+    image: confluentinc/cp-kafka:6.1.0
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPIC: "kafka-spring-boot:1:3"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 7072
+      KAFKA_HEAP_OPTS: -Xms256M -Xmx512M
+    labels:
+      com.datadoghq.ad.check_names: '["kafka", "kafka_consumer"]'
+      com.datadoghq.ad.init_configs: |
+          [
+              {
+                  "collect_default_metrics": true,
+                  "is_jmx": true,
+                  "new_gc_metrics": true,
+                  "service": "kafka"
+              },
+              {
+                  "service": "kafka"
+              }
+          ]
+      com.datadoghq.ad.instances: |
+          [
+              {
+                  "host": "%%host%%",
+                  "name": "kafka",
+                  "port": 7072
+              },
+              {
+                  "kafka_connect_str": [
+                      "%%host%%:9092"
+                  ],
+                  "monitor_all_broker_highwatermarks": true,
+                  "monitor_unlisted_consumer_groups": true
+              }
+          ]
 
   redis:
     image: redis:alpine
     volumes:
       - redisdata:/data
+    
 
   datadog-agent:
     image: datadog/agent:latest-jmx
@@ -38,16 +113,17 @@ services:
       DD_LOGS_ENABLED: "true"
       DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "true"
     labels:
-      com.datadoghq.ad.check_names: '["redisdb", "kafka"]'
-      com.datadoghq.ad.init_configs: '[
-        {},
-        {"collect_default_metrics": "true"}
-      ]'
-      com.datadoghq.ad.instances: '[
-        {"host": "%%host%%","port":"6379","password":"%%env_REDIS_PASSWORD%%"}, 
-        {"host": "%%host%%", "port": "9092"}
-      ]'
-      
+      com.datadoghq.ad.check_names: '["redisdb"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: |
+        [
+          {
+            "host": "%%host%%",
+            "port":"6379",
+            "password":"%%env_REDIS_PASSWORD%%"
+          }
+        ]
+
 volumes:
   redisdata:
     driver: local

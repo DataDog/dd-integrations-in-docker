@@ -22,6 +22,8 @@ docker swarm init
 ```
 ### 3. Download or Clone this repository
 
+[Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) on Github
+
 ### 4. Deploy your swarm stack
 
 You are now ready to deploy the Docker Swarm Stack which is defined in docker-compose.yml of the cloned/downloaded repository. You can deploy with the following command: 
@@ -29,8 +31,17 @@ You are now ready to deploy the Docker Swarm Stack which is defined in docker-co
 docker stack deploy --compose-file=docker-compose.yml integration_stack
 ```
 
-[This stackoverflow post](https://stackoverflow.com/questions/42139605/how-do-you-manage-secret-values-with-docker-compose-v3-1) is extreamly helpful in walking through the process of starting a swarm stack.
 
+NOTE: you may see the following error:
+```
+Creating service integration_stack_<service_name>
+failed to create service integration_stack_<service_name>: Error response from daemon: network integration_stack_default not found
+
+```
+If this occures, simply rerun the docker stack deploy command. You may need to rerun the command several times before it sucsessfully deployes. 
+
+
+[This stackoverflow post](https://stackoverflow.com/questions/42139605/how-do-you-manage-secret-values-with-docker-compose-v3-1) is extreamly helpful in walking through the process of starting a swarm stack.
 
 
 
