@@ -3,7 +3,9 @@ version: '3.8'
 secrets:
   dd_api_key:
     external: true 
-  test:
+  cassandra_user:
+    external: true
+  cassandra_password:
     external: true
 
 services:
@@ -11,8 +13,13 @@ services:
     image: cassandra:latest
     volumes:
       - cassandradata:/data
+    secrets:
+      - cassandra_user
+      - cassandra_password
     environment:
       LOCAL_JMX: "no"
+      CASSANDRA_USER: /run/secrets/cassandra_user
+      CASSANDRA_PASSWORD: /run/secrets/cassandra_password
     labels:
       com.datadoghq.ad.check_names: '["cassandra"]'
       com.datadoghq.ad.init_configs: |-
