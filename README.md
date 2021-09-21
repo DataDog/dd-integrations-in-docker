@@ -24,7 +24,20 @@ docker swarm init
 
 [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) on Github
 
-### 4. Deploy your swarm stack
+
+### 4. Create Docker Secretes for usernames and passwords
+
+You will want to create Docker Secrets for your user name and passwords. This can be done via 
+
+```
+ echo "<password>" | docker secret create my_password -
+```
+
+You will then need to update the services in the docker-compose.yml to reference the secrets you created. [This article](https://medium.com/@adrian.gheorghe.dev/using-docker-secrets-in-your-environment-variables-7a0609659aab) does a good job outlining the process. 
+
+
+
+### 5. Deploy your swarm stack
 
 You are now ready to deploy the Docker Swarm Stack which is defined in docker-compose.yml of the cloned/downloaded repository. You can deploy with the following command: 
 ```
